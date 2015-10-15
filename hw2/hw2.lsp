@@ -1,3 +1,7 @@
+; DFS takes one argument, TREE, that is a list of nodes
+; DFS returns a single, top-level list of the terminal 
+; nodes in the order they would be visited by a left-to-right
+; depth first search
 (defun DFS(tree)
     (cond
         ((listp tree)
@@ -13,6 +17,12 @@
     )
 )
 
+; LDFS takes two arguments, TREE and DEPTH
+; TREE is a list of nodes and DEPTH is the max depth
+; to be visited by a left-to-right depth first search
+; LDFS returns a single, top-level list of the terminal
+; nodes in the order they would be visited by a left-to-right
+; limited depth first search
 (defun LDFS(tree depth)
     (cond
         ((>= depth 0)
@@ -32,6 +42,12 @@
     )
 )
 
+; DFID takes two arguments, TREE and DEPTH
+; TREE is a list of nodes and DEPTH is the max depth
+; the last LDFS call
+; DFID returns a single top-level list of the terminal
+; nodes in the order that they would be visited by a 
+; left-to-right depth first iterative-deepening search
 (defun DFID(tree depth)
     (cond
         ((> depth 0)
@@ -104,8 +120,8 @@
             ((or 
                 (< (first side) 0)
                 (< (second side) 0)
-                (< (first opposite) (second opposite))
-                (< (first side) (second side))
+                (and (< (first opposite) (second opposite)) (> (first opposite) 0))
+                (and (< (first side) (second side)) (> (first side) 0))
             )
                 nil)
             (T
@@ -126,10 +142,11 @@
 ; the current state.
 (defun succ-fn (s)
     (append
-        (next-state s 0 0)
         (next-state s 1 0)
         (next-state s 0 1)
         (next-state s 1 1)
+        (next-state s 2 0)
+        (next-state s 0 2)
     )
 ) 
 
@@ -163,10 +180,8 @@
         (has-goal (cond
             ((= (length states) 0)
                 nil)
-            ((final-state (car states))
-                (cons (car states) path))
             (T
-                (mult-dfs (succ-fn (car states)) (append (car states) path)))
+                (mc-dfs (car states) path))
         ))
     )
     (cond
@@ -189,6 +204,14 @@
 ; ensuring that the depth-first search does not revisit a node already on the
 ; search path.
 (defun mc-dfs (s path)
+    (cond
+        ((on-path s path)
+            nil)
+        ((final-state s)    
+            (append path (list s)))
+        (T
+            (mult-dfs (succ-fn s) (append path (list s))))
+    )
 )
 
 
