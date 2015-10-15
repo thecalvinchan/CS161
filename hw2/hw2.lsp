@@ -138,6 +138,15 @@
 ; stack of states visited by MC-DFS (STATES). It returns T if S is a member of
 ; STATES and NIL otherwise.
 (defun on-path (s states)
+    (cond
+        ((equal states nil)
+            nil)
+        (T
+            (or 
+                (equal s (car states))
+                (on-path s (cdr states))
+            ))
+    )
 )
 
 ; MULT-DFS is a helper function for MC-DFS. It takes two arguments: the path
