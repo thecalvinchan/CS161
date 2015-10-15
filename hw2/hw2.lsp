@@ -125,6 +125,12 @@
 ; returns a list of states that can be reached by applying legal operators to
 ; the current state.
 (defun succ-fn (s)
+    (append
+        (next-state s 0 0)
+        (next-state s 1 0)
+        (next-state s 0 1)
+        (next-state s 1 1)
+    )
 ) 
 
 ; ON-PATH checks whether the current state is on the stack of states visited by
