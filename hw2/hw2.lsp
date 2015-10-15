@@ -158,6 +158,26 @@
 ; of those searches reaches the final state, MULT-DFS returns the complete path
 ; from the initial state to the goal state. Otherwise, it returns NIL.
 (defun mult-dfs (states path)
+    (let
+    (
+        (has-goal (cond
+            ((= (length states) 0)
+                nil)
+            ((final-state (car states))
+                (cons (car states) path))
+            (T
+                (mult-dfs (succ-fn (car states)) (append (car states) path)))
+        ))
+    )
+    (cond
+        (has-goal
+            has-goal)
+        ((> (length (cdr states)) 0)
+            (mult-dfs (cdr states) path)
+        )
+        (T
+            nil)
+    ))
 )
 
 ; MC-DFS does a depth first search from a given state to the goal state. It
