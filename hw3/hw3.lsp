@@ -334,6 +334,14 @@
         )
     )
     (cond
+        ((or
+            ; pos is out of bounds
+            (not value)
+            ; pos is wall
+            (isWall value)
+        )
+            nil
+        )
         ; pos is blank
         ((isBlank value)
             ; move player
@@ -386,6 +394,13 @@
                 ))
             )
                 (cond
+                    ((or 
+                        (not lookahead)
+                        (isWall lookahead)
+                    )
+                        ; lookahead is out of bounds
+                        lookahead
+                    )
                     ((isBlank lookahead)
                         ; spot in front of box is blank and box is not currently on goal
                         (setValueAtPos __s box `(0 0) lookaheadpos)
@@ -400,8 +415,7 @@
                 )
             )
         )
-        ; pos is wall
-        ((isWall value)
+        (T
             nil
         )
     )
@@ -427,7 +441,8 @@
 ; admissible heuristic.
 ;
 (defun h0 (s)
-  )
+    0
+)
 
 ; EXERCISE: Modify this function to compute the
 ; number of misplaced boxes in s.
