@@ -447,6 +447,9 @@
 ; EXERCISE: Modify this function to compute the
 ; number of misplaced boxes in s.
 ;
+; h1 is admissible because it will never overestimate the cost of
+; actually reaching a goal state. To reach a goal state, at the least,
+; a move must be made per box that is not at a goal.
 (defun h1 (s)
     (cond
         ((= (length s) 0)
@@ -479,7 +482,37 @@
 ; The Lisp 'time' function can be used to measure the
 ; running time of a function call.
 ;
-(defun hUID (s)
+
+(defun getListOfX (s x col row)
+    (cond
+        ((= (length s) 0)
+            nil
+        )
+        ((atom (car s))
+            (cond
+                ; if the first element is an atom and it is x
+                ((equal (car s) x)
+                    (append 
+                        (list (list col row))
+                        (getListOfX (cdr s) x (+ col 1) row)
+                    )
+                )
+                ; if the first element is an atom and it is not x 
+                (T
+                    (getListOfX (cdr s) x (+ col 1) row)
+                )
+            )
+        )
+        ((listp (car s))
+            (append
+                (getListOfX (car s) x col row)
+                (getListOfX (cdr s) x col (+ row 1))
+            )
+        )
+    )
+)
+
+(defun h304144970 (s)
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
