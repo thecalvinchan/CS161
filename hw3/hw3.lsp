@@ -184,7 +184,7 @@
             ; if the first element is an atom and it is a box
             (and 
                 (atom (car s)) 
-                (= (car s) 2)
+                (isBox (car s))
             )
             ; if the first element is a sub-list and goal-test
             ; on it returns nil
@@ -223,12 +223,187 @@
 ; You will need to define the function try-move and decide how to represent UP,DOWN,LEFT,RIGHT.
 ; Any NIL result returned from try-move can be removed by cleanUpList.
 ;
+
+(defun getValueAtPos (s curPos goalPos)
+    (cond
+        ((and
+            (= (first goalPos) (first curPos))
+            (= (second goalPos) (second curPos))
+        )
+            ; takes care of condition where getValueAtPos is first called with curPos = goalPos
+            (cond
+                ((listp (car s))
+                    (car (car s))
+                )
+                (T
+                    (car s)
+                )
+            )
+        )
+        ; right before reaching the goalRow
+        ((= (second goalPos) (+ (second curPos) 1))
+            (getValueAtPos (second s) (list 0 (second goalPos)) goalPos)
+        )
+        ; before reaching the goalRow
+        ((> (second goalPos) (second curPos))
+            (getValueAtPos (cdr s) (list 0 (+ (second curPos) 1)) goalPos)    
+        )
+        ; row has been reached
+        ((= (second goalPos) (second curPos))
+            ; traverse through column
+            (getValueAtPos (cdr s) (list (+ (first curPos) 1) (second goalPos)) goalPos)
+        )
+    )
+)
+
+(defun setValueAtPos (s value curPos goalPos)
+    (cond
+        ((and
+            (= (first goalPos) (first curPos))
+            (= (second goalPos) (second curPos))
+        )
+            ; takes care of condition where getValueAtPos is first called with curPos = goalPos
+            (cond
+                ((listp (car s))
+                    (append (list (append (list value) (cdr (car s)))) (cdr s))
+                )
+                (T
+                    (append (list value) (cdr s))
+                )
+            )
+        )
+        ; right before reaching the goalRow
+        ((= (second goalPos) (+ (second curPos) 1))
+            ; append    cur row                     modified row                               remaining rows
+            (append (list (car s)) (list (setValueAtPos (second s) value (list 0 (second goalPos)) goalPos)) (cdr (cdr s)))
+        )
+        ; before reaching the goalRow
+        ((> (second goalPos) (second curPos))
+            (append (list (car s)) (setValueAtPos (cdr s) value (list 0 (+ (second curPos) 1)) goalPos))
+        )
+        ; row has been reached
+        ((= (second goalPos) (second curPos))
+            ; traverse through column
+            (cond
+                ((listp (car s))
+                    (append
+                        (list (append (list (car (car s))) (setValueAtPos (cdr (car s)) value (list (+ (first curPos) 1) (second goalPos)) goalPos)))
+                        (cdr s)
+                    )
+                )
+                (T
+                    (append (list (car s)) (setValueAtPos (cdr s) value (list (+ (first curPos) 1) (second goalPos)) goalPos))
+                )
+            )
+        )
+    )
+)
+
+(defun try-move (s dir)
+    (let* (
+        (originalKeeperPos (getKeeperPosition s 0))
+        (isKeeperOnGoal (isKeeperStar (getValueAtPos s `(0 0) originalKeeperPos)))
+        (up 1)
+        (down 3)
+        (left 4)
+        (right 2)
+        (pos (cond
+            ((= dir up)
+                (list (first originalKeeperPos) (- (second originalKeeperPos) 1))
+            )
+            ((= dir down)
+                (list (first originalKeeperPos) (+ (second originalKeeperPos) 1))
+            )
+            ((= dir left)
+                (list (- (first originalKeeperPos) 1) (second originalKeeperPos))
+            )
+            ((= dir right)
+                (list (+ (first originalKeeperPos) 1) (second originalKeeperPos))
+            )
+        ))
+        (value (getValueAtPos s `(0 0) pos))
+        (_s
+            (cond 
+                (isKeeperOnGoal
+                    (setValueAtPos s star `(0 0) originalKeeperPos)
+                )
+                (T
+                    (setValueAtPos s blank `(0 0) originalKeeperPos)
+                )
+            )
+        )
+    )
+    (cond
+        ; pos is blank
+        ((isBlank value)
+            ; move player
+            (setValueAtPos _s keeper `(0 0) pos)
+        )
+        ((isStar value)
+            ; move player to keeperStar
+            (setValueAtPos _s keeperStar `(0 0) pos)
+        )
+        ; pos has box
+        ((or (isBox value) (isBoxStar value))
+            (let* (
+                (lookahead (cond
+                    ((= dir up)
+                        (getValueAtPos s `(0 0) (list (first value) (- (second value) 1)))
+                    )
+                    ((= dir down)
+                        (getValueAtPos s `(0 0) (list (first value) (+ (second value) 1)))
+                    )
+                    ((= dir left)
+                        (getValueAtPos s `(0 0) (list (- (first value) 1) (second value)))
+                    )
+                    ((= dir right)
+                        (getValueAtPos s `(0 0) (list (+ (first value) 1) (second value)))
+                    )
+                ))
+                (__s (cond
+                    ((isBox value)
+                        ; box is not currently on goal
+                        (setValueAtPos _s keeper `(0 0) pos)
+                    )
+                    ((isBoxStar value)
+                        ; box is currently on goal
+                        (setValueAtPos _s keeperStar `(0 0) pos)
+                    )
+                ))
+            )
+                (cond
+                    ((isBlank lookahead)
+                        ; spot in front of box is blank and box is not currently on goal
+                        (setValueAtPos __s box `(0 0) lookahead)
+                    )
+                    ((isStar lookahead)
+                        ; spot in front of box is goal and box is not currently on goal
+                        (setValueAtPos __s boxStar `(0 0) lookahead)
+                    )
+                    (T
+                        nil
+                    )
+                )
+            )
+        )
+        ; pos is wall
+        ((isWall value)
+            nil
+        )
+    )
+    )
+)
+
 (defun next-states (s)
   (let* ((pos (getKeeperPosition s 0))
 	 (x (car pos))
 	 (y (cadr pos))
+     (up 1)
+     (down 3)
+     (left 4)
+     (right 2)
 	 ;x and y are now the coordinate of the keeper in s.
-	 (result nil)
+     (result (list (try-move s UP) (try-move s DOWN) (try-move s LEFT) (try-move s RIGHT)))
 	 )
     (cleanUpList result);end
    );end let
