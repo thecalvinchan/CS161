@@ -448,6 +448,26 @@
 ; number of misplaced boxes in s.
 ;
 (defun h1 (s)
+    (cond
+        ((= (length s) 0)
+            0
+        )
+        ((atom (car s))
+            (cond
+                ; if the first element is an atom and it is a box
+                ((isBox (car s))
+                    (+ 1 (h1 (cdr s))) 
+                )
+                ; if the first element is an atom and it is not box
+                (T
+                    (h1 (cdr s))
+                )
+            )
+        )
+        ((listp (car s))
+            (+ (h1 (car s)) (h1 (cdr s)))
+        )
+    )
   )
 
 ; EXERCISE: Change the name of this function to h<UID> where
