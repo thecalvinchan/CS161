@@ -346,18 +346,32 @@
         ; pos has box
         ((or (isBox value) (isBoxStar value))
             (let* (
-                (lookahead (cond
+                (lookaheadpos (cond
                     ((= dir up)
-                        (getValueAtPos s `(0 0) (list (first value) (- (second value) 1)))
+                        (list (first pos) (- (second pos) 1))
                     )
                     ((= dir down)
-                        (getValueAtPos s `(0 0) (list (first value) (+ (second value) 1)))
+                        (list (first pos) (+ (second pos) 1))
                     )
                     ((= dir left)
-                        (getValueAtPos s `(0 0) (list (- (first value) 1) (second value)))
+                        (list (- (first pos) 1) (second pos))
                     )
                     ((= dir right)
-                        (getValueAtPos s `(0 0) (list (+ (first value) 1) (second value)))
+                        (list (+ (first pos) 1) (second pos))
+                    )
+                ))
+                (lookahead (cond
+                    ((= dir up)
+                        (getValueAtPos s `(0 0) lookaheadpos)
+                    )
+                    ((= dir down)
+                        (getValueAtPos s `(0 0) lookaheadpos)
+                    )
+                    ((= dir left)
+                        (getValueAtPos s `(0 0) lookaheadpos)
+                    )
+                    ((= dir right)
+                        (getValueAtPos s `(0 0) lookaheadpos)
                     )
                 ))
                 (__s (cond
@@ -374,11 +388,11 @@
                 (cond
                     ((isBlank lookahead)
                         ; spot in front of box is blank and box is not currently on goal
-                        (setValueAtPos __s box `(0 0) lookahead)
+                        (setValueAtPos __s box `(0 0) lookaheadpos)
                     )
                     ((isStar lookahead)
                         ; spot in front of box is goal and box is not currently on goal
-                        (setValueAtPos __s boxStar `(0 0) lookahead)
+                        (setValueAtPos __s boxStar `(0 0) lookaheadpos)
                     )
                     (T
                         nil
