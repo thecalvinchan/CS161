@@ -512,7 +512,130 @@
     )
 )
 
+(defun carPermutations (l start)
+    (cond
+        ((= (length l) start)
+            nil
+        )
+        (T
+            (let* (
+                (_l (append (cdr l) (list (car l))))
+            )
+                (append 
+                    (list l)
+                    (carPermutations _l (+ start 1))
+                )
+            )
+        )
+    )
+)
+
+(defun absoluteValue (a)
+    (cond
+        ((< a 0)
+            (- 0 a)
+        )
+        (T
+            a
+        )
+    )
+)
+
+(defun manhattanDistance (a b)
+    (+
+        (absoluteValue (- (first a) (first b)))
+        (absoluteValue (- (second a) (second b)))
+    )
+)
+
+(defun findMinDistance (box stars start end)
+    ; findMinDistance returns tuple
+    ; `(minDistance (list remainingStars))
+    (let*
+    (
+        (headDistance (manhattanDistance box (car (car stars))))
+        (tailMin (cond
+            ((< start (- end 1)) 
+                (findMinDistance box (cdr stars) (+ start 1) end)
+            )
+            (T
+                nil
+            )
+        ))
+    )
+        (cond
+            ((or
+                (not tailMin)
+                (< headDistance (first tailMin))
+            )
+                (list
+                    headDistance
+                    (cdr (car stars))
+                )
+            )
+            (T
+                tailMin
+            )
+        )
+    )
+)
+
+(defun calculatePermutation (boxes stars)
+    (let*
+    (
+        (targetStar (findMinDistance (car boxes) (carPermutations stars 0) 0 (length stars)))
+        (minDistance (first targetStar))
+        (remainingBoxes (cdr boxes))
+        (remainingStars (second targetStar))
+    )
+        (+ minDistance 
+            (cond
+                ((> (length remainingBoxes) 0)
+                    (processPermutations (carPermutations remainingBoxes 0) remainingStars 0 (length remainingBoxes))
+                )
+                (T
+                    0
+                )
+            )
+        )
+    )
+)
+
+(defun processPermutations (boxes stars start end)
+    (let*
+    (
+        (headValue (calculatePermutation (car boxes) stars))
+        (tailMin (cond
+            ((< start (- end 1))
+                (processPermutations (cdr boxes) stars (+ start 1) end)
+            )
+            (T
+                nil
+            )
+        ))
+    )
+        (cond
+            ((or 
+                (not tailMin) 
+                (< headValue tailMin)
+            )
+                headValue 
+            )
+            (T
+                tailMin
+            )
+        )
+    )
+)
+
 (defun h304144970 (s)
+    (let*
+    (
+        (boxes (getListOfX s box 0 0))
+        (stars (getListOfX s star 0 0))
+    )
+        (processPermutations (carPermutations boxes 0) stars 0 (length boxes))
+    )
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
