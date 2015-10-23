@@ -175,33 +175,20 @@
 ; this function as the goal testing function, A* will never
 ; terminate until the whole search space is exhausted.
 ;
-(defun goal-test (s)
+
+(defun checkRowForBox (row) 
     (cond
-        ((= (length s) 0)
-            T
-        )
-        ((or 
-            ; if the first element is an atom and it is a box
-            (and 
-                (atom (car s)) 
-                (isBox (car s))
-            )
-            ; if the first element is a sub-list and goal-test
-            ; on it returns nil
-            (and 
-                (listp (car s))
-                (not (goal-test (car s)))
-            )
-        )
-            nil
-        )
-        ; if the first element is a sub-list and goal-test on it
-        ; returns true or if the first element is an atom and is
-        ; not a box
-        (T
-            ; call goal-test on next sub-list
-            (goal-test (cdr s))
-        )
+        ((null row) nil)
+        ((isBox (car row)) T)
+        (T (checkRowForBox (cdr row)))
+    )
+)
+
+(defun goal-test (s)
+    (cond 
+        ((null s) T)
+        ((checkRowForBox (car s)) nil)
+        (T (goal-test (cdr s)))
     )
 );end defun
 
@@ -224,6 +211,23 @@
 ; Any NIL result returned from try-move can be removed by cleanUpList.
 ;
 
+(defun next-states (s)
+  (let* ((pos (getKeeperPosition s 0))
+	 (x (car pos))
+	 (y (cadr pos))
+     (up 1)
+     (down 3)
+     (left 4)
+     (right 2)
+	 ;x and y are now the coordinate of the keeper in s.
+     (result (list (try-move s UP) (try-move s DOWN) (try-move s LEFT) (try-move s RIGHT)))
+	 )
+    (cleanUpList result)
+   );end let
+  );
+
+; getValueAtPos return the value at goalPos on game state s
+; it returns nil if the position is not a valid position
 (defun getValueAtPos (s curPos goalPos)
     (cond
         ((and
@@ -256,6 +260,7 @@
     )
 )
 
+; setValueAtPos changes the value at goalPos on game state s to be of value, value
 (defun setValueAtPos (s value curPos goalPos)
     (cond
         ((and
@@ -299,6 +304,8 @@
     )
 )
 
+; try-move attempts to move the player in a direction, dir. If possible, it will call
+; setValueAtPos to update the game state.
 (defun try-move (s dir)
     (let* (
         (originalKeeperPos (getKeeperPosition s 0))
@@ -399,14 +406,14 @@
                         (isWall lookahead)
                     )
                         ; lookahead is out of bounds
-                        lookahead
+                        nil
                     )
                     ((isBlank lookahead)
-                        ; spot in front of box is blank and box is not currently on goal
+                        ; spot in front of box is blank
                         (setValueAtPos __s box `(0 0) lookaheadpos)
                     )
                     ((isStar lookahead)
-                        ; spot in front of box is goal and box is not currently on goal
+                        ; spot in front of box is goal
                         (setValueAtPos __s boxStar `(0 0) lookaheadpos)
                     )
                     (T
@@ -422,20 +429,6 @@
     )
 )
 
-(defun next-states (s)
-  (let* ((pos (getKeeperPosition s 0))
-	 (x (car pos))
-	 (y (cadr pos))
-     (up 1)
-     (down 3)
-     (left 4)
-     (right 2)
-	 ;x and y are now the coordinate of the keeper in s.
-     (result (list (try-move s UP) (try-move s DOWN) (try-move s LEFT) (try-move s RIGHT)))
-	 )
-    (cleanUpList result);end
-   );end let
-  );
 
 ; EXERCISE: Modify this function to compute the trivial
 ; admissible heuristic.
@@ -483,6 +476,7 @@
 ; running time of a function call.
 ;
 
+; getListOfX returns a list of the coordinates of all values x
 (defun getListOfX (s x col row)
     (cond
         ((= (length s) 0)
@@ -512,6 +506,9 @@
     )
 )
 
+; carPermutations returns a list of all possible permutations of l
+; with a varying (car l), essentially swapping the first item in l
+; with all other items in l
 (defun carPermutations (l start)
     (cond
         ((= (length l) start)
@@ -548,9 +545,11 @@
     )
 )
 
+; findMinDistance returns tuple
+; `(minDistance (list remainingStars))
+; minDistance represents the minimum distance edge between box
+; and a list of stars.
 (defun findMinDistance (box stars start end)
-    ; findMinDistance returns tuple
-    ; `(minDistance (list remainingStars))
     (let*
     (
         (headDistance (manhattanDistance box (car (car stars))))
@@ -580,6 +579,9 @@
     )
 )
 
+; calculatePermutation returns minimum sum of lowest cost
+; bipartite matching between a list of boxes and stars. It
+; is a helper for processPermutations
 (defun calculatePermutation (boxes stars)
     (let*
     (
@@ -601,6 +603,9 @@
     )
 )
 
+; processPermutations returns a minimum sum of lowest cost
+; bipartite matching between a list of boxes and stars.
+; it considers all possible permutations of boxes and stars.
 (defun processPermutations (boxes stars start end)
     (let*
     (
@@ -628,13 +633,24 @@
     )
 )
 
+; h304144970 is a heuristic that returns the lowest cost bipartite matching betweenall
+; boxes and their closest goal/stars. This is admissable because this will be the minimum
+; number of steps required to move all boxes to their respective closest goals, taking into 
+; consideration that various permutations of box-to-goal matchings may yield better results
+; than other permutations.
 (defun h304144970 (s)
     (let*
     (
         (boxes (getListOfX s box 0 0))
-        (stars (getListOfX s star 0 0))
+        (stars (append (getListOfX s star 0 0) (getListOfX s keeperStar 0 0)))
     )
-        (processPermutations (carPermutations boxes 0) stars 0 (length boxes))
+        (cond
+            ((or (null boxes) (null stars))
+                0)
+            (T
+                (processPermutations (carPermutations boxes 0) stars 0 (length boxes))
+            )
+        )
     )
   )
 
